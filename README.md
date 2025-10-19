@@ -123,7 +123,7 @@ The Updates CSV uses these same fields\
 |--------                                |--------                  |-------------|
 | DisplayName                            | Marketing Conference Rm  | (view-only info)             |
 | UserPrincipalName                      | mkt_conf_room@domain.com | (required key field)         |
-| Perm_CalendarDefault                   | AvailabilityOnly         |                              |
+| Perm_CalendarDefault                   | AvailabilityOnly         | * AvailabilityOnly or LimitedDetails if Org wants to see room calendar |
 | Place_Capacity                         | 8                        | The # of people the room can have  |
 | Place_City                             | London                   |                                    |
 | Place_MTREnabled                       | FALSE                    | (Generally false     )             |
