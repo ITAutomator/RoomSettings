@@ -78,11 +78,8 @@ for all available configurations.\
     *General Recommendation: Leave false. Change to true to hide subject (but then also set AddOrganizerToSubject to true)*
 
 -   **ProcessExternalMeetingMessages: \$true**\
-    Specifies whether to process meeting requests organized outside your
-    Exchange environment. This option is required for meeting invites sent
-    directly by an external organizer as well external organized meetings
-    forwarded by an internal user.\
-    *General Recommendation: Leave true*
+    Specifies whether to process meeting requests organized outside your Exchange environment. This option is required for meeting invites sent directly by an external organizer as well as external organized meetings *forwarded by* an internal user.\
+    *General Recommendation: Leave true - unless there is concern about spam bookings from outside the company*
 
 -   **RemovePrivateProperty: \$false**\
     Ensures the private flag that sent by the meeting organizer in the original meeting request remains as specified.
@@ -93,12 +90,6 @@ for all available configurations.\
 -   **AdditionalResponse: \"This is a Microsoft Teams Meeting room!\"**\
     The text to add to the meeting acceptance body. You can also format HTML content in the automatic reply if you wish.\
     *General Recommendation: Don't change these*
-
--   **ProcessExternalMeetingMessages: \$false**\
-    This is intentional for security and spam reasons: by default,
-    Exchange won't process calendar invites from unauthenticated
-    external senders unless you explicitly enable it.\
-    *General Recommendation: Don't change this*\
 
 -   **MTREnabled: \$false**\
     True\
@@ -114,7 +105,7 @@ for all available configurations.\
     The number of people that the room can fit. Informational\
     *General Recommendation: Set to room capacity*
 
--   **ProcessExternalMeetingMessages: AvailabilityOnly**\
+-   **Calendar Permission: AvailabilityOnly**\
     This is the calendar *default* permission (that is visible to all Org). More Info from Microsoft: [link](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-mailboxfolderpermission?view=exchange-ps#-accessrights)\
     *AvailabilityOnly* means show free-busy information only (not even subject is visible)\
     *LimitedDetails* means show subject but nothing else\
@@ -122,6 +113,38 @@ for all available configurations.\
     *AvailabilityOnly* for most rooms.\
     *LimitedDetails* if *DeleteSubject* is true *and* there is an org-wide need to find the person who booked the room in case of conflicts. This would be the case if there were no known room personnel to check the calendar.\
     *LimitedDetails* if *DeleteSubject* is false for small orgs that are OK exposing the title of every booked meeting.\
+
+# Reports
+
+The CSV reports outputs the following information for all Room Mailboxes in the tenant (whether they are Teams Room licensed or not)\
+The Updates CSV uses these same fields\
+
+| Column                                 | Value (sample)           | Description (*see info above) |
+|--------                                |--------                  |-------------|
+| DisplayName                            | Marketing Conference Rm  | (view-only info)             |
+| UserPrincipalName                      | mkt_conf_room@domain.com | (required key field)         |
+| Perm_CalendarDefault                   | AvailabilityOnly         |                              |
+| Place_Capacity                         | 8                        | The # of people the room can have  |
+| Place_City                             | London                   |                                    |
+| Place_MTREnabled                       | FALSE                    | (Generally false     )             |
+| Place_AudioDeviceName                  |                          | Descriptive info - generally blank |
+| Place_VideoDeviceName                  |                          | Descriptive info - generally blank |
+| Proc_AddOrganizerToSubject             | TRUE                     | *Appends the organizer name to the subject       |
+| Proc_DeleteSubject                     | TRUE                     | *Strips Subject (use with AddOrganizerToSubject) |
+| Proc_DeleteAttachments                 | TRUE                     | *Strips Attachments                              |
+| Proc_DeleteComments                    | TRUE                     | *Strips Body (caution: removes 3rd party links)  |
+| Proc_AutomateProcessing                | AutoAccept               | This should always be AutoAccept                 |
+| Proc_AllowRecurringMeetings            | TRUE                     | FALSE: Do not allow recurring meetings           |
+| Proc_ProcessExternalMeetingMessages    | TRUE                     | *FALSE: Organizer must be internal               |
+| Proc_RemovePrivateProperty             | FALSE                    | TRUE: Removes the property called Private |
+| Proc_AddAdditionalResponse             | FALSE                    | TRUE: Add text from below field           |
+| Proc_AdditionalResponse                |                          | Text response to append to booking response - generally blank |
+| Proc_AllowConflicts                    | FALSE                    | TRUE: Allow overlapping meetings          |
+| Proc_BookingWindowInDays               | 180                      | How far advanced booking can be in days   |
+| Proc_MaximumDurationInMinutes          | 1440                     | How long a meeting can be in mins         |
+| AccountEnabled                         | TRUE                     | (view-only info)                          |
+| LicenseInfo                            | Teams Room Basic         | License assigned to room (if any) (view-only info) |
+| Warnings                               |                          | Any warnings detected by this code are shown here  |
 
 # Notes
 
