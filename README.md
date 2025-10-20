@@ -68,9 +68,7 @@ for all available configurations.\
     is required to create join buttons for [third-party
     meetings](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join) on
     a Teams Rooms device.
-    *General Recommendation: Leave false. Warning: changing to true will
-    break 3^rd^ party meetings (see link above) like Zoom. Teams is not
-    affected by this -- it uses other internal properties.*
+    *General Recommendation: Leave false. Warning: changing to true will break 3rd party meetings (see link above) like Zoom. Teams is not affected by this -- it uses other internal properties.*
 
 -   **DeleteSubject: \$false**\
     Keep the subject of incoming meeting requests on the resource
@@ -119,6 +117,8 @@ for all available configurations.\
 The CSV reports outputs the following information for all Room Mailboxes in the tenant (whether they are Teams Room licensed or not)\
 The Updates CSV uses these same fields\
 
+## Columns
+
 | Column                                 | Value (sample)           | Description (*see info above) |
 |--------                                |--------                  |-------------|
 | DisplayName                            | Marketing Conference Rm  | (view-only info)             |
@@ -145,6 +145,19 @@ The Updates CSV uses these same fields\
 | AccountEnabled                         | TRUE                     | (view-only info)                          |
 | LicenseInfo                            | Teams Room Basic         | License assigned to room (if any) (view-only info) |
 | Warnings                               |                          | Any warnings detected by this code are shown here  |
+
+## Warnings
+
+Here are the various warnings that the code detects  
+- AutomateProcessing should be AutoAccept  
+- Recurring meetings are NOT allowed  
+- AllowConflicts is TRUE (may lead to double-booking)  
+- External meeting messages are processed (may allow spam bookings)  
+- Comments (message body) is deleted - may remove 3rd party links  
+- Subjects are deleted - but organizer is NOT added to subject - may make it hard to identify meetings   
+- Calendar Default permission is '$room_mb_perm_str' (should be 'AvailabilityOnly' for free-busy or 'LimitedDetails' for subject-only)  
+- No license assigned  
+- Account is disabled  
 
 # Notes
 
