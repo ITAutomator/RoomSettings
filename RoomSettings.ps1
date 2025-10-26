@@ -19,6 +19,7 @@ $props_ignore += "UserPrincipalName"
 $props_ignore += "Warnings"
 $props_ignore += "LicenseInfo"
 $props_ignore += "AccountEnabled"
+$props_ignore += "PasswordExpiryDate"
 #
 $props_valid_intg = @()
 $props_valid_strg = @()
@@ -59,11 +60,28 @@ Write-Host "    Note: Move the CSV from the Report folder into the Update folder
 Write-Host ""
 Write-Host "Note: See README.md for details."
 Write-Host "-----------------------------------------------------------------------------"
-If (AskForChoice "Exclude License info from Reports? (Yes = faster, No=Requires Connect-MgGraph)" -Default 0) {
+If (AskForChoice "Exclude License info from Reports? (Yes = faster, No=Requires Connect-MgGraph)" -Default 1) {
     $LicenseInfoInReports=$false
 } else {
     $LicenseInfoInReports=$true
-}   
+}
+#region modules
+$modules=@()
+$modules+="ExchangeOnlineManagement"
+if ($LicenseInfoInReports) {
+    # $modules+="Microsoft.Graph"
+    $modules+="Microsoft.Graph.Authentication"
+    $modules+="Microsoft.Graph.Identity.DirectoryManagement"
+    $modules+="Microsoft.Graph.Users"
+}
+ForEach ($module in $modules)
+{ 
+    Write-Host "Loadmodule $($module)..." -NoNewline ; $lm_result=LoadModule $module -checkver $true; Write-Host $lm_result
+    if ($lm_result.startswith("ERR")) {
+        Write-Host "ERR: Load-Module $($module) failed. Suggestion: Open PowerShell $($PSVersionTable.PSVersion.Major) as admin and run: Install-Module $($module)";Start-sleep  3; Return $false
+    }
+}
+#endregion modules
 #region Connections
 if ($LicenseInfoInReports) { # Connect-MgGraph
     if (-not (Get-Command -Name Connect-MgGraph -ErrorAction SilentlyContinue)) {
@@ -199,6 +217,14 @@ do
     if ($choice -eq "Open this folder") { Invoke-Item (Split-Path $scriptFullname -Parent); PressEnterToContinue "Folder opened in Explorer: $(Split-Path $scriptFullname -Parent)"; Continue }
     if ($choice -eq "Report RoomSettings") { # Report
         $rows=@()
+        if ($LicenseInfoInReports) {
+            Write-Host "Get-MgDomain..." -NoNewline
+            $MgDomain   = Get-MgDomain | Sort-Object Id
+            Write-Host ($MgDomain.count) -ForegroundColor Green
+            Write-Host "Get-MgSubscribedSku..." -NoNewline
+            $MgSubscribedSku = Get-MgSubscribedSku
+            Write-Host ($MgSubscribedSku.count) -ForegroundColor Green
+        }
         Write-Host "Get-Mailbox -RecipientTypeDetails RoomMailbox (list of Rooms) ... " -NoNewline
         # Get a list of room mailboxes in the tenant 
         $room_mbs = Get-Mailbox -RecipientTypeDetails RoomMailbox 
@@ -206,6 +232,7 @@ do
         $i=0
         ForEach ($room_mb in $room_mbs)
         { # each mailbox
+            $Warnings = @() # reset warnings
             Write-Host "$((++$i)) of $($room_mbs.Count): $($room_mb.DisplayName) <$($room_mb.UserPrincipalName)>"
             # Get calendar processing settings
             Write-Host " Get-CalendarProcessing.." -NoNewline
@@ -220,32 +247,112 @@ do
             # License info
             if ($LicenseInfoInReports) {
                 Write-Host " Get-MgUser.." -NoNewline
-                $room_mb_user = Get-MgUser -UserId $room_mb.UserPrincipalName -Property "AssignedLicenses,DisplayName,AccountEnabled" -ErrorAction SilentlyContinue
+                $room_mb_user = Get-MgUser -UserId $room_mb.UserPrincipalName -Property "UserPrincipalName,AssignedLicenses,DisplayName,AccountEnabled,PasswordPolicies,CreatedDateTime,LastPasswordChangeDateTime" -ErrorAction SilentlyContinue
                 if ($room_mb_user) {
                     $assigned_licenses = $room_mb_user.AssignedLicenses | ForEach-Object { $_.SkuId }
                     $license_names = @()
                     foreach ($skuId in $assigned_licenses) {
-                        $sku = Get-MgSubscribedSku | Where-Object { $_.SkuId -eq $skuId }
+                        $sku = $MgSubscribedSku | Where-Object { $_.SkuId -eq $skuId }
                         if ($sku) {
                             $license_names += $sku.SkuPartNumber
                         }
                     }
-                    $room_mb_lic = ($license_names -join "; ")
-                    if ($room_mb_lic -eq "") {
-                        $room_mb_lic = "(None)"
+                    $room_user_lic = ($license_names -join "; ")
+                    if ($room_user_lic -eq "") {
+                        $room_user_lic = "(None)"
                     }
-                    $room_mb_userenabled = $room_mb_user.AccountEnabled
+                    $room_user_enabled = $room_mb_user.AccountEnabled
+                    #region Passsword expiry
+                    #### Dates
+                    $CreatedDate                  = $room_mb_user.CreatedDateTime
+                    $LastPasswordChangeDate       = $room_mb_user.LastPasswordChangeDateTime
+                    #### Password Expiry Date
+                    $upn_domain = ($room_mb_user.UserPrincipalName -split "@")[1]
+                    $dom_info   = $MgDomain | Where-Object Id -EQ $upn_domain
+                    $dom_PasswordValidityPeriodInDays     = if ($dom_info.PasswordValidityPeriodInDays -eq 2147483647) { 0 } else { $dom_info.PasswordValidityPeriodInDays} 
+                    $dom_PasswordNotificationWindowInDays = $dom_info.PasswordNotificationWindowInDays
+                    if ($room_mb_user.AccountEnabled)
+                    { # Account is enabled
+                        if ($dom_PasswordValidityPeriodInDays -gt 0)
+                        { # domain has a password expiry policy
+                            $PasswordExpiryDisabled       = $room_mb_user.PasswordPolicies -match "DisablePasswordExpiration"
+                            if ($PasswordExpiryDisabled)
+                            { # user has DisablePasswordExpiration
+                                $PasswordExpiryInDays = "Never (User has DisablePasswordExpiration policy)"
+                                $PasswordExpiryDate   = "Never (User has DisablePasswordExpiration policy)"
+                            } # user has DisablePasswordExpiration
+                            else
+                            { # user has not DisablePasswordExpiration
+                                if ($Licenses -like "*teams room*")
+                                {
+                                    $Warning+="Accounts with Teams room licenses should have a DisablePasswordExpiration policy"
+                                }
+                                if ($LastPasswordChangeDate)
+                                { # user has changed password at least once
+                                    $PasswordExpiryInDays = [math]::Round((($LastPasswordChangeDate.AddDays($dom_PasswordValidityPeriodInDays)) - (Get-Date)).TotalDays,0)
+                                    # if ($PasswordExpiryInDays -lt 0) {$PasswordExpiryInDays = 0}
+                                    $PasswordExpiryDate = $LastPasswordChangeDate.AddDays($dom_PasswordValidityPeriodInDays)
+                                    if ($PasswordExpiryInDays -lt $dom_PasswordNotificationWindowInDays)
+                                    {
+                                        if ($PasswordExpiryInDays -lt 0) {
+                                            $Warning+="Password expired"
+                                        }
+                                        else {
+                                            $Warning+="Password expiry notification active [$($dom_PasswordNotificationWindowInDays) days]"
+                                        }
+                                    }
+                                } # user has changed password at least once
+                                else
+                                { # user has never changed password
+                                    # use created date as a proxy for last pwd change date
+                                    if ($CreatedDate)
+                                    { # has created date
+                                        $PasswordExpiryInDays = [math]::Round((($CreatedDate.AddDays($dom_PasswordValidityPeriodInDays)) - (Get-Date)).TotalDays,0)
+                                        # if ($PasswordExpiryInDays -lt 0) {$PasswordExpiryInDays = 0}
+                                        $PasswordExpiryDate = $CreatedDate.AddDays($dom_PasswordValidityPeriodInDays)
+                                        if ($PasswordExpiryInDays -lt $dom_PasswordNotificationWindowInDays)
+                                        {
+                                            if ($PasswordExpiryInDays -lt 0) {
+                                                $Warning+="Password expired"
+                                            }
+                                            else {
+                                                $Warning+="Password expiry notification active [$($dom_PasswordNotificationWindowInDays) days]"
+                                            }
+                                        }
+                                    } # has created date
+                                    else
+                                    { # no created date - can't determine expiry date
+                                        $Warning+="User has never changed their password and there's no CreatedDate to use as a proxy for pwd change date"
+                                        $PasswordExpiryInDays = "Unknown"
+                                        $PasswordExpiryDate   = "Unknown"
+                                    } # no created date - can't determine expiry date
+                                } # user has never changed password
+                            } # user has not DisablePasswordExpiration
+                        } # domain has a password expiry policy
+                        else
+                        { # domain has no password expiry policy
+                            $PasswordExpiryInDays = ""
+                            $PasswordExpiryDate   = ""
+                        } # domain has no password expiry policy
+                    } # Account is enabled
+                    else 
+                    { # Account is disabled
+                        $PasswordExpiryInDays = ""
+                        $PasswordExpiryDate   = ""
+                    } # Account is disabled
+                    #endregion Passsword expiry
                 } else {
-                    $room_mb_lic = "(User not found)"
+                    $room_user_lic = "(User not found)"
                 }
             }
             else {
-                $room_mb_lic = "(not checked)"
-                $room_mb_userenabled = "(not checked)"
+                $room_user_lic = "(not checked)"
+                $room_user_enabled = "(not checked)"
+                $PasswordExpiryInDays = "(not checked)"
+                $PasswordExpiryDate   = "(not checked)"
             }
             Write-Host " "
             #region Warnings
-            $Warnings = @()
             if (-not $room_mb_proc) {
                 $Warnings += "No calendar processing settings found"
             }
@@ -270,10 +377,10 @@ do
             if ($room_mb_perm_str -notin ("AvailabilityOnly","LimitedDetails")) {
                 $Warnings += "Calendar Default permission is '$room_mb_perm_str' (should be 'AvailabilityOnly' for free-busy or 'LimitedDetails' for subject-only)"
             }
-            if ($room_mb_lic -eq "(None)") {
+            if ($room_user_lic -eq "(None)") {
                 $Warnings += "No license assigned"
             }
-            if ($room_mb_userenabled -eq $false) {
+            if ($room_user_enabled -eq $false) {
                 $Warnings += "Account is disabled"
             }
             if ($Warnings.count -gt 0) {
@@ -304,8 +411,9 @@ do
                 Proc_AllowConflicts                 = $room_mb_proc.AllowConflicts
                 Proc_BookingWindowInDays            = $room_mb_proc.BookingWindowInDays
                 Proc_MaximumDurationInMinutes       = $room_mb_proc.MaximumDurationInMinutes
-                AccountEnabled              = $room_mb_userenabled
-                LicenseInfo                 = $room_mb_lic
+                AccountEnabled              = $room_user_enabled
+                LicenseInfo                 = $room_user_lic
+                PasswordExpiryDate          = $PasswordExpiryDate
                 Warnings                    = $Warnings -join "; "
             }
             #### Add to results

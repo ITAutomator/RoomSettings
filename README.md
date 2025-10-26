@@ -93,11 +93,11 @@ for all available configurations.\
     True\
     The room is marked as a Microsoft Teams Room. This typically means: The mailbox represents a physical space with a Teams Room device (like a Surface Hub or certified MTR console).\
     Teams and Outlook will treat the room as a "Teams Meeting Room," showing "Join" buttons on the device and enabling room-specific experiences.\
-    This value may be set manually or via provisioning (e.g., when creating an MTR account following Microsoft's guidance).\
+    This value may be set manually or via provisioning (e.g., when creating an MTR account following Microsoft's guidance).  
 
     False\
     The room is a normal meeting room without any Teams Room device integration. It can still be scheduled for Teams meetings, but it won't behave as a dedicated MTR device\
-    *General Recommendation: Don't change this. It seems to always be false for now even though the docs say it should be true*\
+    *General Recommendation: Don't change this. It seems to always be false for now even though the docs say it should be true*  
 
 -   **Capacity: 12**\
     The number of people that the room can fit. Informational\
@@ -110,12 +110,12 @@ for all available configurations.\
     *GeneralvRecommendation:*\
     *AvailabilityOnly* for most rooms.\
     *LimitedDetails* if *DeleteSubject* is true *and* there is an org-wide need to find the person who booked the room in case of conflicts. This would be the case if there were no known room personnel to check the calendar.\
-    *LimitedDetails* if *DeleteSubject* is false for small orgs that are OK exposing the title of every booked meeting.\
+    *LimitedDetails* if *DeleteSubject* is false for small orgs that are OK exposing the title of every booked meeting.  
 
 # Reports
 
 The CSV reports outputs the following information for all Room Mailboxes in the tenant (whether they are Teams Room licensed or not)\
-The Updates CSV uses these same fields\
+The Updates CSV uses these same fields  
 
 ## Columns
 
@@ -144,6 +144,7 @@ The Updates CSV uses these same fields\
 | Proc_MaximumDurationInMinutes          | 1440                     | How long a meeting can be in mins         |
 | AccountEnabled                         | TRUE                     | (view-only info)                          |
 | LicenseInfo                            | Teams Room Basic         | License assigned to room (if any) (view-only info) |
+| PasswordExpiryDate                     |                          | (if the org expires passwords)                     |
 | Warnings                               |                          | Any warnings detected by this code are shown here  |
 
 ## Warnings
@@ -157,6 +158,7 @@ Here are the various warnings that the code detects
 - Subjects are deleted - but organizer is NOT added to subject - may make it hard to identify meetings   
 - Calendar Default permission is '$room_mb_perm_str' (should be 'AvailabilityOnly' for free-busy or 'LimitedDetails' for subject-only)  
 - No license assigned  
+- Accounts with Teams room licenses should have a DisablePasswordExpiration policy (if the org expires passwords)  
 - Account is disabled  
 
 # Notes
@@ -188,10 +190,10 @@ information.\
 ## Calendar Visibility via Sharing and Permissions
 
 Notwithstanding the `Set-CalendarProcessing` settings described above, you can also adjust the room calendar's visibility via the **Sharing and
-Permissions** settings that are common to all user calendars.\
+Permissions** settings that are common to all user calendars.  
 
 *`Set-CalendarProcessing` (covered above)*\
-This strips and permanently changes the calendar items. Only used in rooms. This is independent of *sharing and permissions*.\
+This strips and permanently changes the calendar items. Only used in rooms. This is independent of *sharing and permissions*.  
 
 *Sharing and Permissions (covered here)*\
 **Outlook > Calendar > Properties > Sharing and Permission**\
