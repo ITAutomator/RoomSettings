@@ -161,11 +161,32 @@ Here are the various warnings that the code detects
 - Accounts with Teams room licenses should have a DisablePasswordExpiration policy (if the org expires passwords)  
 - Account is disabled  
 
-# Notes
+# Troubleshooting / Notes
 
 ## Deleting the Message Body
 
-This will remove 3rd party links (Zoom). Teams is not affected by this. See here for more info: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?tabs=MTRW)
+This will remove 3rd party links (Zoom). Teams is not affected by this. See here for more info: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?tabs=MTRW)  
+Make sure these are set as follows  
+`DeleteComments: $false`  
+`ProcessExternalMeetingMessages: $true`  
+
+
+## URL Rewriting Tools  
+See Step 3A here: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-3a-configure-url-rewrite-policies-to-not-modify-third-party-meeting-links).  
+And format for Safe links Exclusions here: (Safe Links Formatting)[https://learn.microsoft.com/en-us/defender-office-365/safe-links-about#entry-syntax-for-the-do-not-rewrite-the-following-urls-list]  
+  
+If you have a tool (e.g. Microsoft Defender) that rewrites URLs in message bodies, you will have to exclude zoom.us (e.g.) or else the device will not recognize join links.  
+  
+*Microsoft Defender > Email & Collaboration > Policies & rules > Threat policies Safe Links > Protection Settings > Edit > Do not rewrite the following URLs in email*  
+e.g. `*.zoom.us/*` covers all the interations you would need for zoom links. 
+ 
+
+## Allowing 3rd Party Joining (Setting on Device itself)  
+See Step 4 here: (Third-party meetings on Teams Rooms)[(https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-4-enable-third-party-meetings-on-your-teams-rooms-devices)]  
+This can only be done on the device itself (unless you have *Teams Room Pro* licensing).  
+*Microsoft Teams Room device console > More > Settings >*   
+[enter the device administrator username and password]  
+*Meetings tab > Cisco Webex, Zoom, etc*  
 
 ## Password Change
 
