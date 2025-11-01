@@ -28,6 +28,10 @@ Connect-MgGraph
 Get-Place
 Set-Place
 ```
+[Set-CalendarProcessing](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-calendarprocessing)  
+[Set-MailboxFolderPermission](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-mailboxfolderpermission)  
+[Set-Place](https://learn.microsoft.com/en-us/powershell/module/exchangepowershell/set-place)  
+  
 # Usage
 
 Double-click `RoomSettings.cmd` to show the main menu.  
@@ -197,7 +201,7 @@ If you are not seeing the join button for 3rd party links, make sure these are s
 
 ## URL Rewriting Tools  
 See Step 3A here: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-3a-configure-url-rewrite-policies-to-not-modify-third-party-meeting-links).  
-And format for Safe links Exclusions here: (Safe Links Formatting)[https://learn.microsoft.com/en-us/defender-office-365/safe-links-about#entry-syntax-for-the-do-not-rewrite-the-following-urls-list]  
+And format for Safe links Exclusions here: [Safe Links Formatting](https://learn.microsoft.com/en-us/defender-office-365/safe-links-about#entry-syntax-for-the-do-not-rewrite-the-following-urls-list)   
   
 If you have a tool (e.g. Microsoft Defender) that rewrites URLs in message bodies, you will have to exclude zoom.us (e.g.) or else the device will not recognize join links.  
   
@@ -206,7 +210,7 @@ e.g. `*.zoom.us/*` covers all the interations you would need for zoom links.
  
 
 ## Allowing 3rd Party Joining (Setting on Device itself)  
-If you are not seeing the join button, see Step 4 here: (Third-party meetings on Teams Rooms)[(https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-4-enable-third-party-meetings-on-your-teams-rooms-devices)]  
+If you are not seeing the join button, see Step 4 here: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-4-enable-third-party-meetings-on-your-teams-rooms-devices)  
 This can only be done on the device itself (unless you have *Teams Room Pro* licensing).  
 *Microsoft Teams Room device console > More > Settings >*   
 [enter the device administrator username and password]  
