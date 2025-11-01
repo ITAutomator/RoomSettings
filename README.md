@@ -20,6 +20,12 @@ These settings are adjusted using the cmdlets.
 Connect-ExchangeOnline
 Get-CalendarProcessing
 Set-CalendarProcessing
+Get-MailboxFolderPermission
+Set-MailboxFolderPermission
+
+Connect-MgGraph
+Get-Place
+Set-Place
 ```
 # Usage
 
@@ -76,7 +82,7 @@ for all available configurations.\
     *General Recommendation: Leave false. Change to true to hide subject (but then also set AddOrganizerToSubject to true)*
 
 -   **ProcessExternalMeetingMessages: \$true**\
-    Specifies whether to process meeting requests organized outside your Exchange environment. This option is required for meeting invites sent directly by an external organizer as well as external organized meetings *forwarded by* an internal user.\
+    Specifies whether to process meeting requests organized outside your Exchange environment. This option is required for meeting invites sent directly by an external organizer *as well as* external organized meetings *forwarded by* an internal user.\
     *General Recommendation: Leave true - unless there is concern about spam bookings from outside the company*
 
 -   **RemovePrivateProperty: \$false**\
@@ -90,12 +96,12 @@ for all available configurations.\
     *General Recommendation: Don't change these*
 
 -   **MTREnabled: \$false**\
-    True\
+    True means\
     The room is marked as a Microsoft Teams Room. This typically means: The mailbox represents a physical space with a Teams Room device (like a Surface Hub or certified MTR console).\
     Teams and Outlook will treat the room as a "Teams Meeting Room," showing "Join" buttons on the device and enabling room-specific experiences.\
     This value may be set manually or via provisioning (e.g., when creating an MTR account following Microsoft's guidance).  
 
-    False\
+    False means\
     The room is a normal meeting room without any Teams Room device integration. It can still be scheduled for Teams meetings, but it won't behave as a dedicated MTR device\
     *General Recommendation: Don't change this. It seems to always be false for now even though the docs say it should be true*  
 
@@ -166,7 +172,7 @@ Here are the various warnings that the code detects
 ## Deleting the Message Body
 
 This will remove 3rd party links (Zoom). Teams is not affected by this. See here for more info: [Third-party meetings on Teams Rooms](https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?tabs=MTRW)  
-Make sure these are set as follows  
+If you are not seeing the join button for 3rd party links, make sure these are set as follows  
 `DeleteComments: $false`  
 `ProcessExternalMeetingMessages: $true`  
 
@@ -182,7 +188,7 @@ e.g. `*.zoom.us/*` covers all the interations you would need for zoom links.
  
 
 ## Allowing 3rd Party Joining (Setting on Device itself)  
-See Step 4 here: (Third-party meetings on Teams Rooms)[(https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-4-enable-third-party-meetings-on-your-teams-rooms-devices)]  
+If you are not seeing the join button, see Step 4 here: (Third-party meetings on Teams Rooms)[(https://learn.microsoft.com/en-us/microsoftteams/rooms/third-party-join?utm_source=chatgpt.com&tabs=MTRW#step-4-enable-third-party-meetings-on-your-teams-rooms-devices)]  
 This can only be done on the device itself (unless you have *Teams Room Pro* licensing).  
 *Microsoft Teams Room device console > More > Settings >*   
 [enter the device administrator username and password]  
